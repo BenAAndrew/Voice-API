@@ -32,12 +32,20 @@ def check_files():
 # Synthesis
 check_files()
 inflect_engine = inflect.engine()
-WAVEGLOW = load_waveglow(os.path.join(DATA_FOLDER, "waveglow.pt"))
-MODELS = {"David Attenborough": load_model(os.path.join(DATA_FOLDER, "David_Attenborough.pt"))}
+WAVEGLOW = None
+MODELS = None
 
 
 @app.route("/", methods=["GET"])
 def index():
+    global WAVEGLOW, MODELS
+
+    if not WAVEGLOW:
+        WAVEGLOW = load_waveglow(os.path.join(DATA_FOLDER, "waveglow.pt"))
+
+    if not MODELS:
+        MODELS = {"David Attenborough": load_model(os.path.join(DATA_FOLDER, "David_Attenborough.pt"))}
+
     voice_name = request.args.get("name")
     if not voice_name:
         return jsonify({"error": "No name given"}), 400
