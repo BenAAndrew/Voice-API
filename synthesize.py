@@ -6,6 +6,7 @@ from tacotron2_model import Tacotron2
 import torch
 import numpy as np
 import glow
+from scipy.io.wavfile import write
 
 import matplotlib
 
@@ -16,19 +17,20 @@ from clean_text import clean_text
 
 SYMBOLS = "_-!'(),.:;? ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 SYMBOL_TO_ID = {s: i for i, s in enumerate(SYMBOLS)}
+MAX_WAV_VALUE = 32768.0
+SIGMA = 1.0
 
 
 def load_model(model_path):
     model = Tacotron2()
-    model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu"))["state_dict"])
+    model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
     return model
 
 
-def load_waveglow(waveglow_path):
-    waveglow = torch.load(waveglow_path)["model"]
-    for k in waveglow.convinv:
-        k.float()
-    return waveglow
+def load_vocoder(vocoder_path):
+    squeezewave = torch.load(vocoder_path, map_location=torch.device('cpu'))['model']
+    squeezewave = squeezewave.remove_weightnorm(squeezewave)
+    return squeezewave
 
 
 def generate_graph(alignments, filepath):
@@ -37,14 +39,15 @@ def generate_graph(alignments, filepath):
     plt.savefig(filepath)
 
 
-def generate_audio(mel, waveglow, filepath, sample_rate=22050):
+def generate_audio(mel, vocoder, filepath, sample_rate=22050):
     with torch.no_grad():
-        audio = waveglow.infer(mel, sigma=0.666)
+        audio = vocoder.infer(mel, sigma=SIGMA).float()
+        audio = audio * MAX_WAV_VALUE
+    audio = audio.squeeze()
+    audio = audio.cpu().numpy()
+    audio = audio.astype('int16')
 
-    audio = audio[0].data.cpu().numpy()
-    audio = ipd.Audio(audio, rate=sample_rate)
-    with open(filepath, "wb") as f:
-        f.write(audio.data)
+    write(filepath, sample_rate, audio)
 
 
 def text_to_sequence(text):
@@ -52,7 +55,7 @@ def text_to_sequence(text):
     return torch.autograd.Variable(torch.from_numpy(sequence)).cpu().long()
 
 
-def synthesize(model, waveglow_model, text, inflect_engine, graph=None, audio=None):
+def synthesize(model, vocoder, text, inflect_engine, graph=None, audio=None):
     text = clean_text(text, inflect_engine)
     sequence = text_to_sequence(text)
     _, mel_outputs_postnet, _, alignments = model.inference(sequence)
@@ -61,4 +64,4 @@ def synthesize(model, waveglow_model, text, inflect_engine, graph=None, audio=No
         generate_graph(alignments, graph)
 
     if audio:
-        generate_audio(mel_outputs_postnet, waveglow_model, audio)
+        generate_audio(mel_outputs_postnet, vocoder, audio)

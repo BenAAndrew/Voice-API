@@ -6,12 +6,12 @@ import uuid
 from google_drive_downloader import GoogleDriveDownloader as gdd
 
 from app import app, DATA_FOLDER, RESULTS_FOLDER
-from synthesize import load_waveglow, load_model, synthesize
+from synthesize import load_vocoder, load_model, synthesize
 
 
 REQUIRED_FILES = {
-    "waveglow.pt": "1JcR8a915nj8-jmbUEMJI3SyIf64WrvE3",
-    "David_Attenborough.pt": "1Gww0pGOQmwc-CgNptO0ECIywrrWPJe0y"
+    "L128_small_pretrain.pt": "1BKCVK781QTvmkYneK9eP9_ZDKBzcTOkk",
+    "David_Attenborough.pt": "1-Rq_oj3pluFE4vfIOiUpI1CrkFT62LOm"
 }
 
 
@@ -20,8 +20,6 @@ def get_model_name(voice_name):
 
 
 def check_files():
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    os.makedirs(RESULTS_FOLDER, exist_ok=True)
     files = os.listdir(DATA_FOLDER)
 
     for name, id in REQUIRED_FILES.items():
@@ -30,6 +28,8 @@ def check_files():
 
 
 # Synthesis
+os.makedirs(DATA_FOLDER, exist_ok=True)
+os.makedirs(RESULTS_FOLDER, exist_ok=True)
 check_files()
 inflect_engine = inflect.engine()
 WAVEGLOW = None
@@ -39,9 +39,10 @@ MODELS = None
 @app.route("/", methods=["GET"])
 def index():
     global WAVEGLOW, MODELS
+    check_files()
 
     if not WAVEGLOW:
-        WAVEGLOW = load_waveglow(os.path.join(DATA_FOLDER, "waveglow.pt"))
+        WAVEGLOW = load_vocoder(os.path.join(DATA_FOLDER, "L128_small_pretrain.pt"))
 
     if not MODELS:
         MODELS = {"David Attenborough": load_model(os.path.join(DATA_FOLDER, "David_Attenborough.pt"))}
