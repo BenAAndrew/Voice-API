@@ -3,6 +3,7 @@ import os
 import io
 import inflect
 import uuid
+import gc
 from google_drive_downloader import GoogleDriveDownloader as gdd
 
 from app import app, DATA_FOLDER, RESULTS_FOLDER
@@ -40,6 +41,7 @@ MODELS = None
 def index():
     global WAVEGLOW, MODELS
     check_files()
+    gc.collect()
 
     if not WAVEGLOW:
         WAVEGLOW = load_vocoder(os.path.join(DATA_FOLDER, "L128_small_pretrain.pt"))
