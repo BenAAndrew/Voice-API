@@ -44,20 +44,18 @@ os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 inflect_engine = inflect.engine()
 VOCODER = None
-MODELS = None
+MODEL = None
+MODEL_NAME = None
 
 
 @app.route("/", methods=["GET"])
 def index():
-    global VOCODER, MODELS
+    global VOCODER, MODEL, MODEL_NAME
     check_files()
     gc.collect()
 
     if not VOCODER:
         VOCODER = load_hifigan_model(os.path.join(DATA_FOLDER, HIFIGAN_MODEL), os.path.join(DATA_FOLDER, HIFIGAN_CONFIG))
-
-    if not MODELS:
-        MODELS = {name: load_model(os.path.join(DATA_FOLDER, get_model_name(name))) for name in VOICES}
 
     voice_name = request.args.get("name")
     if not voice_name:
@@ -67,13 +65,18 @@ def index():
     if not text:
         return jsonify({"error": "No text given"}), 400
 
-    if voice_name not in MODELS:
-        return jsonify({"error": "Voice not found"}), 400
+    if MODEL_NAME != voice_name:
+        model_path = os.path.join(DATA_FOLDER, get_model_name(voice_name))
+        if not os.path.isfile(model_path):
+            return jsonify({"error": "Voice not found"}), 400
 
+        MODEL = load_model(model_path)
+        MODEL_NAME = voice_name
+        
     id = str(uuid.uuid4())
     graph_path = os.path.join(RESULTS_FOLDER, f"{id}.png")
     audio_path = os.path.join(RESULTS_FOLDER, f"{id}.wav")
-    synthesize(MODELS[voice_name], VOCODER, text, inflect_engine, graph=graph_path, audio=audio_path)
+    synthesize(MODEL, VOCODER, text, inflect_engine, graph=graph_path, audio=audio_path)
 
     return jsonify({"graph": f"results/{id}.png", "audio": f"results/{id}.wav"})
 
