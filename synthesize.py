@@ -22,7 +22,7 @@ SIGMA = 1.0
 
 def load_model(model_path):
     model = Tacotron2()
-    model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu"))["state_dict"])
     return model
 
 

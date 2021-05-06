@@ -33,7 +33,7 @@ def check_files():
 
     for name, id in REQUIRED_FILES.items():
         if name not in files:
-            gdd.download_file_from_google_drive(file_id=id, dest_path=os.path.join(DATA_FOLDER, name))
+            gdd.download_file_from_google_drive(file_id=id, dest_path=os.path.join(DATA_FOLDER, get_model_name(name)))
 
 
 # Synthesis
@@ -55,7 +55,7 @@ def index():
         VOCODER = load_hifigan_model(os.path.join(DATA_FOLDER, HIFIGAN_MODEL), os.path.join(DATA_FOLDER, HIFIGAN_CONFIG))
 
     if not MODELS:
-        MODELS = {"David Attenborough": load_model(os.path.join(DATA_FOLDER, "David_Attenborough.pt"))}
+        MODELS = {name: load_model(os.path.join(DATA_FOLDER, get_model_name(name))) for name in VOICES}
 
     voice_name = request.args.get("name")
     if not voice_name:
