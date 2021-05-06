@@ -4,6 +4,7 @@ import io
 import inflect
 import uuid
 import gc
+import json
 from google_drive_downloader import GoogleDriveDownloader as gdd
 
 from app import app, DATA_FOLDER, RESULTS_FOLDER
@@ -14,8 +15,11 @@ from synthesize import load_model, synthesize
 REQUIRED_FILES = {
     "hifigan.pt": "15-CfChiUdX2zay0kZmQNuXd0jRsqfmhq",
     "config.json": "1sJ71OLN6FcP7sY4vsKTrm0SJnp4flDy2",
-    "David_Attenborough.pt": "1-Rq_oj3pluFE4vfIOiUpI1CrkFT62LOm"
 }
+with open("voices.json") as f:
+    VOICES = json.load(f)
+
+REQUIRED_FILES.update(VOICES)
 HIFIGAN_MODEL = "hifigan.pt"
 HIFIGAN_CONFIG = "config.json"
 
