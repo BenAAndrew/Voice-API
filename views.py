@@ -5,11 +5,13 @@ import inflect
 import uuid
 import gc
 import json
+from torch import load, device
 from google_drive_downloader import GoogleDriveDownloader as gdd
+from tacotron2_model import Tacotron2
 
 from app import app, DATA_FOLDER, RESULTS_FOLDER
 from hifigan import load_hifigan_model
-from synthesize import load_model, synthesize
+from synthesize import synthesize
 
 
 VOCODER_FILES = {
@@ -44,7 +46,7 @@ os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 inflect_engine = inflect.engine()
 VOCODER = None
-MODEL = None
+MODEL = Tacotron2()
 MODEL_NAME = None
 
 
@@ -70,7 +72,7 @@ def index():
         if not os.path.isfile(model_path):
             return jsonify({"error": "Voice not found"}), 400
 
-        MODEL = load_model(model_path)
+        MODEL.load_state_dict(load(model_path, map_location=device("cpu"))["state_dict"])
         MODEL_NAME = voice_name
         
     id = str(uuid.uuid4())

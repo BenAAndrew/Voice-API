@@ -1,8 +1,6 @@
-import os
 import inflect
 import matplotlib.pyplot as plt
-from tacotron2_model import Tacotron2
-import torch
+from torch import autograd, from_numpy
 import numpy as np
 from scipy.io.wavfile import write
 
@@ -16,14 +14,6 @@ from hifigan import generate_audio_hifigan
 
 SYMBOLS = "_-!'(),.:;? ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 SYMBOL_TO_ID = {s: i for i, s in enumerate(SYMBOLS)}
-MAX_WAV_VALUE = 32768.0
-SIGMA = 1.0
-
-
-def load_model(model_path):
-    model = Tacotron2()
-    model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu"))["state_dict"])
-    return model
 
 
 def generate_graph(alignments, filepath):
@@ -34,7 +24,7 @@ def generate_graph(alignments, filepath):
 
 def text_to_sequence(text):
     sequence = np.array([[SYMBOL_TO_ID[s] for s in text if s in SYMBOL_TO_ID]])
-    return torch.autograd.Variable(torch.from_numpy(sequence)).cpu().long()
+    return autograd.Variable(from_numpy(sequence)).cpu().long()
 
 
 def synthesize(model, vocoder, text, inflect_engine, graph=None, audio=None):
