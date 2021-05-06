@@ -12,16 +12,15 @@ from hifigan import load_hifigan_model
 from synthesize import load_model, synthesize
 
 
-REQUIRED_FILES = {
+VOCODER_FILES = {
     "hifigan.pt": "15-CfChiUdX2zay0kZmQNuXd0jRsqfmhq",
     "config.json": "1sJ71OLN6FcP7sY4vsKTrm0SJnp4flDy2",
 }
-with open("voices.json") as f:
-    VOICES = json.load(f)
-
-REQUIRED_FILES.update(VOICES)
 HIFIGAN_MODEL = "hifigan.pt"
 HIFIGAN_CONFIG = "config.json"
+
+with open("voices.json") as f:
+    VOICES = json.load(f)
 
 
 def get_model_name(voice_name):
@@ -31,7 +30,11 @@ def get_model_name(voice_name):
 def check_files():
     files = os.listdir(DATA_FOLDER)
 
-    for name, id in REQUIRED_FILES.items():
+    for name, id in VOCODER_FILES.items():
+        if name not in files:
+            gdd.download_file_from_google_drive(file_id=id, dest_path=os.path.join(DATA_FOLDER, name))
+
+    for name, id in VOICES.items():
         if name not in files:
             gdd.download_file_from_google_drive(file_id=id, dest_path=os.path.join(DATA_FOLDER, get_model_name(name)))
 
@@ -39,7 +42,6 @@ def check_files():
 # Synthesis
 os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
-check_files()
 inflect_engine = inflect.engine()
 VOCODER = None
 MODELS = None
