@@ -1,11 +1,9 @@
 import os
 import inflect
 import matplotlib.pyplot as plt
-import IPython.display as ipd
 from tacotron2_model import Tacotron2
 import torch
 import numpy as np
-import glow
 from scipy.io.wavfile import write
 
 import matplotlib
@@ -13,6 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 from clean_text import clean_text
+from hifigan import generate_audio_hifigan
 
 
 SYMBOLS = "_-!'(),.:;? ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -27,27 +26,10 @@ def load_model(model_path):
     return model
 
 
-def load_vocoder(vocoder_path):
-    squeezewave = torch.load(vocoder_path, map_location=torch.device('cpu'))['model']
-    squeezewave = squeezewave.remove_weightnorm(squeezewave)
-    return squeezewave
-
-
 def generate_graph(alignments, filepath):
     data = alignments.float().data.cpu().numpy()[0].T
     plt.imshow(data, aspect="auto", origin="lower", interpolation="none")
     plt.savefig(filepath)
-
-
-def generate_audio(mel, vocoder, filepath, sample_rate=22050):
-    with torch.no_grad():
-        audio = vocoder.infer(mel, sigma=SIGMA).float()
-        audio = audio * MAX_WAV_VALUE
-    audio = audio.squeeze()
-    audio = audio.cpu().numpy()
-    audio = audio.astype('int16')
-
-    write(filepath, sample_rate, audio)
 
 
 def text_to_sequence(text):
@@ -64,4 +46,4 @@ def synthesize(model, vocoder, text, inflect_engine, graph=None, audio=None):
         generate_graph(alignments, graph)
 
     if audio:
-        generate_audio(mel_outputs_postnet, vocoder, audio)
+        generate_audio_hifigan(vocoder, mel_outputs_postnet, audio)

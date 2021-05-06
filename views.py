@@ -7,13 +7,17 @@ import gc
 from google_drive_downloader import GoogleDriveDownloader as gdd
 
 from app import app, DATA_FOLDER, RESULTS_FOLDER
-from synthesize import load_vocoder, load_model, synthesize
+from hifigan import load_hifigan_model
+from synthesize import load_model, synthesize
 
 
 REQUIRED_FILES = {
-    "L128_small_pretrain.pt": "1BKCVK781QTvmkYneK9eP9_ZDKBzcTOkk",
+    "hifigan.pt": "15-CfChiUdX2zay0kZmQNuXd0jRsqfmhq",
+    "config.json": "1sJ71OLN6FcP7sY4vsKTrm0SJnp4flDy2",
     "David_Attenborough.pt": "1-Rq_oj3pluFE4vfIOiUpI1CrkFT62LOm"
 }
+HIFIGAN_MODEL = "hifigan.pt"
+HIFIGAN_CONFIG = "config.json"
 
 
 def get_model_name(voice_name):
@@ -33,18 +37,18 @@ os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 check_files()
 inflect_engine = inflect.engine()
-WAVEGLOW = None
+VOCODER = None
 MODELS = None
 
 
 @app.route("/", methods=["GET"])
 def index():
-    global WAVEGLOW, MODELS
+    global VOCODER, MODELS
     check_files()
     gc.collect()
 
-    if not WAVEGLOW:
-        WAVEGLOW = load_vocoder(os.path.join(DATA_FOLDER, "L128_small_pretrain.pt"))
+    if not VOCODER:
+        VOCODER = load_hifigan_model(os.path.join(DATA_FOLDER, HIFIGAN_MODEL), os.path.join(DATA_FOLDER, HIFIGAN_CONFIG))
 
     if not MODELS:
         MODELS = {"David Attenborough": load_model(os.path.join(DATA_FOLDER, "David_Attenborough.pt"))}
@@ -63,7 +67,7 @@ def index():
     id = str(uuid.uuid4())
     graph_path = os.path.join(RESULTS_FOLDER, f"{id}.png")
     audio_path = os.path.join(RESULTS_FOLDER, f"{id}.wav")
-    synthesize(MODELS[voice_name], WAVEGLOW, text, inflect_engine, graph=graph_path, audio=audio_path)
+    synthesize(MODELS[voice_name], VOCODER, text, inflect_engine, graph=graph_path, audio=audio_path)
 
     return jsonify({"graph": f"results/{id}.png", "audio": f"results/{id}.wav"})
 
