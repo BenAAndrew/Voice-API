@@ -92,3 +92,8 @@ def results(path):
 
     with open(os.path.join(RESULTS_FOLDER, path), "rb") as f:
         return send_file(io.BytesIO(f.read()), attachment_filename=path, mimetype=mimetype)
+
+
+@app.route("/voices", methods=["GET"])
+def available_voices():
+    return jsonify({"voices": list(VOICES.keys())})
