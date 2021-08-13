@@ -1,5 +1,4 @@
 import re
-import inflect
 from unidecode import unidecode
 
 COMMA_NUMBER_RE = re.compile(r"([0-9][0-9\,]+[0-9])")

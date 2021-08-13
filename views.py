@@ -10,7 +10,7 @@ from google_drive_downloader import GoogleDriveDownloader as gdd
 from tacotron2_model import Tacotron2
 
 from app import app, DATA_FOLDER, RESULTS_FOLDER
-from hifigan import load_hifigan_model
+from vocoders import Hifigan
 from synthesize import synthesize
 
 
@@ -57,7 +57,7 @@ def index():
     gc.collect()
 
     if not VOCODER:
-        VOCODER = load_hifigan_model(os.path.join(DATA_FOLDER, HIFIGAN_MODEL), os.path.join(DATA_FOLDER, HIFIGAN_CONFIG))
+        VOCODER = Hifigan(os.path.join(DATA_FOLDER, HIFIGAN_MODEL), os.path.join(DATA_FOLDER, HIFIGAN_CONFIG))
 
     voice_name = request.args.get("name")
     if not voice_name:
@@ -76,22 +76,11 @@ def index():
         MODEL_NAME = voice_name
         
     id = str(uuid.uuid4())
-    graph_path = os.path.join(RESULTS_FOLDER, f"{id}.png")
     audio_path = os.path.join(RESULTS_FOLDER, f"{id}.wav")
-    synthesize(MODEL, VOCODER, text, inflect_engine, graph=graph_path, audio=audio_path)
+    synthesize(MODEL, VOCODER, text, inflect_engine, audio_path)
 
-    return jsonify({"graph": f"results/{id}.png", "audio": f"results/{id}.wav"})
-
-
-@app.route("/results/<path:path>", methods=["GET"])
-def results(path):
-    mimetype = "image/png" if path.endswith("png") else "audio/wav"
-
-    if not os.path.isfile(os.path.join(RESULTS_FOLDER, path)):
-        return jsonify({"error": "File not found"}), 400
-
-    with open(os.path.join(RESULTS_FOLDER, path), "rb") as f:
-        return send_file(io.BytesIO(f.read()), attachment_filename=path, mimetype=mimetype)
+    with open(audio_path, "rb") as f:
+        return send_file(io.BytesIO(f.read()), attachment_filename=audio_path, mimetype="audio/wav")
 
 
 @app.route("/voices", methods=["GET"])
